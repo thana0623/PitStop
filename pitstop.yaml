@@ -1,0 +1,21 @@
+project:
+  name: "my-app"
+
+services:
+  backend:
+    type: springboot
+    path: "./cdz"
+    command: "mvn spring-boot:run"
+    port: 12011
+    health_check: "http://localhost:12011/api/health"
+
+  frontend:
+    type: vue
+    path: "./cdz2"
+    command: "pnpm dev"
+    port: 12010
+    health_check: "http://localhost:12010"
+
+logging:
+  dir: "./logs"
+  stdout: true
