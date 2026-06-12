@@ -68,12 +68,9 @@ func runStart() error {
 			fmt.Printf("    Health:  %s\n", svc.HealthCheck)
 		}
 
-		if err := mgr.Start(name, workDir, svc.Command); err != nil {
+		if err := mgr.Start(name, workDir, svc.Command, writer); err != nil {
 			return fmt.Errorf("starting %s: %w", name, err)
 		}
-
-		// TODO: pipe stdout/stderr through the logger (Task 5 refinement)
-		_ = writer
 	}
 
 	fmt.Printf("\nAll services started. Logs: %s\n", logDir)

@@ -2,6 +2,7 @@ package process
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,8 +41,8 @@ func New(pidDir string) *Manager {
 
 // Start launches a child process for the given service.
 // name is the service key from config, workDir is the working directory,
-// and command is the shell command to execute.
-func (m *Manager) Start(name, workDir, command string) error {
+// command is the shell command to execute, and out is the writer for stdout/stderr.
+func (m *Manager) Start(name, workDir, command string, out io.Writer) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -56,6 +57,11 @@ func (m *Manager) Start(name, workDir, command string) error {
 		cmd = exec.Command("sh", "-c", command)
 	}
 	cmd.Dir = workDir
+	cmd.Stdin = nil
+	if out != nil {
+		cmd.Stdout = out
+		cmd.Stderr = out
+	}
 	setProcessGroup(cmd)
 
 	if err := cmd.Start(); err != nil {

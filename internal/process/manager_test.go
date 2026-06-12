@@ -21,7 +21,7 @@ func TestStartAndStop(t *testing.T) {
 	pidDir := t.TempDir()
 	mgr := New(pidDir)
 
-	if err := mgr.Start("test-svc", ".", longRunningCmd()); err != nil {
+	if err := mgr.Start("test-svc", ".", longRunningCmd(), nil); err != nil {
 		t.Fatalf("Start() error: %v", err)
 	}
 
@@ -57,13 +57,13 @@ func TestStartDuplicate(t *testing.T) {
 	pidDir := t.TempDir()
 	mgr := New(pidDir)
 
-	if err := mgr.Start("dup", ".", longRunningCmd()); err != nil {
+	if err := mgr.Start("dup", ".", longRunningCmd(), nil); err != nil {
 		t.Fatalf("Start() error: %v", err)
 	}
 	defer mgr.Stop("dup", 2*time.Second)
 
 	// Starting the same service again should fail.
-	if err := mgr.Start("dup", ".", longRunningCmd()); err == nil {
+	if err := mgr.Start("dup", ".", longRunningCmd(), nil); err == nil {
 		t.Error("Start() should fail for duplicate service")
 	}
 }
@@ -83,8 +83,8 @@ func TestStopAll(t *testing.T) {
 	pidDir := t.TempDir()
 	mgr := New(pidDir)
 
-	mgr.Start("svc1", ".", longRunningCmd())
-	mgr.Start("svc2", ".", longRunningCmd())
+	mgr.Start("svc1", ".", longRunningCmd(), nil)
+	mgr.Start("svc2", ".", longRunningCmd(), nil)
 	time.Sleep(200 * time.Millisecond)
 
 	errs := mgr.StopAll(5 * time.Second)
@@ -113,8 +113,8 @@ func TestRunning(t *testing.T) {
 		t.Error("new manager should have 0 running services")
 	}
 
-	mgr.Start("a", ".", longRunningCmd())
-	mgr.Start("b", ".", longRunningCmd())
+	mgr.Start("a", ".", longRunningCmd(), nil)
+	mgr.Start("b", ".", longRunningCmd(), nil)
 	defer mgr.StopAll(2 * time.Second)
 
 	names := mgr.Running()
@@ -128,7 +128,7 @@ func TestProcessExit(t *testing.T) {
 	mgr := New(pidDir)
 
 	// Start a process that exits quickly.
-	if err := mgr.Start("quick", ".", "echo done"); err != nil {
+	if err := mgr.Start("quick", ".", "echo done", nil); err != nil {
 		t.Fatalf("Start() error: %v", err)
 	}
 

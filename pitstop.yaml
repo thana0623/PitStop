@@ -4,15 +4,15 @@ project:
 services:
   backend:
     type: springboot
-    path: "./cdz"
-    command: "mvn spring-boot:run"
+    path: "C:/admin/Code/Project/cd/cdz"
+    command: "mvn spring-boot:run -pl lynuai-admin"
     port: 12011
     health_check: "http://localhost:12011/api/health"
 
   frontend:
     type: vue
-    path: "./cdz2"
-    command: "pnpm dev"
+    path: "C:/admin/Code/Project/cd/cdz2"
+    command: "npm run dev"
     port: 12010
     health_check: "http://localhost:12010"
 
