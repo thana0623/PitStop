@@ -9,9 +9,10 @@ import (
 
 // Config represents the pitstop.yaml configuration structure.
 type Config struct {
-	Project  Project            `yaml:"project"`
-	Services map[string]Service `yaml:"services"`
-	Logging  Logging            `yaml:"logging"`
+	Project      Project            `yaml:"project"`
+	Services     map[string]Service `yaml:"services"`
+	Requirements map[string]string  `yaml:"requirements"`
+	Logging      Logging            `yaml:"logging"`
 }
 
 // Project holds project-level settings.

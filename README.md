@@ -2,9 +2,7 @@
 
 # 🏁 PitStop
 
-**一键启动，改完即跑。**
-
-AI 写完代码后的第一公里验证工具。
+**环境检查 + 启动脚本生成 — AI 写完代码后的第一公里验证。**
 
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
@@ -13,28 +11,21 @@ AI 写完代码后的第一公里验证工具。
 
 ---
 
-## 为什么需要 PitStop？
-
-AI 辅助开发让写代码变快了，但**验证代码是否可用**依然是最慢的环节。
-
-| 环节 | 耗时 | 痛点 |
-|------|------|------|
-| 设计 + 编码 | 30 min | ✅ AI 加速 |
-| 启动 + 测试 | 60+ min | ❌ 手动重启、内存爆炸、反馈慢 |
-
-**PitStop 的目标：** 把验证时间从编码时间的 2 倍降到 0.5 倍以下。
-
 ## 它是什么？
 
-PitStop 是一个 **Go CLI 工具**，通过一份 YAML 配置文件，一键启动你的 SpringBoot + Vue 项目。
+PitStop 是一个 Go CLI 工具，做三件事：
+
+1. **检查环境** — 比对项目需要什么（Java 17、Node 22）和本机有什么
+2. **启动项目** — 一条命令启动所有服务（SpringBoot、Vue、…）
+3. **导出脚本** — 生成可独立运行的 `start.sh` / `start.bat`，跟项目走
 
 ```bash
+pitstop check    # 检查环境是否满足要求
 pitstop start    # 启动所有服务
 pitstop stop     # 一键停止
 pitstop report   # 查看日志摘要
+pitstop export   # 导出启动/停止脚本
 ```
-
-**改完代码？不用手动重启。** SpringBoot DevTools 自动热重载，Vue HMR 即时生效。
 
 ## 快速开始
 
@@ -44,151 +35,164 @@ pitstop report   # 查看日志摘要
 go install github.com/thana0623/PitStop@latest
 ```
 
-### 2. 创建配置文件
-
-在项目根目录创建 `pitstop.yaml`：
+### 2. 创建项目配置 `pitstop.yaml`
 
 ```yaml
 project:
-  name: "my-app"
+  name: my-app
 
 services:
   backend:
-    type: springboot
-    path: "./backend"
-    command: "mvn spring-boot:run"
+    cwd: ./backend
+    command: mvn spring-boot:run
     port: 8080
-    health_check: "http://localhost:8080/actuator/health"
+    health_check: http://localhost:8080/actuator/health
 
   frontend:
-    type: vue
-    path: "./frontend"
-    command: "pnpm dev"
+    cwd: ./frontend
+    command: npm run dev
     port: 5173
-    health_check: "http://localhost:5173"
+    health_check: http://localhost:5173
+
+requirements:
+  java: ">=17"
+  node: ">=22"
+  maven: ">=3.8"
 
 logging:
-  dir: "./logs"
+  dir: ./logs
   stdout: true
 ```
 
-### 3. 启动
+### 3. 检查环境
+
+```bash
+pitstop check
+```
+
+输出：
+
+```
+Environment Check
+=================
+
+  ✅ java 17.0.1 >=17 (/usr/lib/jvm/java-17/bin/java)
+  ✅ node 22.0.0 >=22 (/usr/local/bin/node)
+  ❌ maven not found (need >=3.8)
+
+❌ Some requirements not met.
+```
+
+### 4. 启动
 
 ```bash
 pitstop start
 ```
 
-输出：
-
-```
-🏁 PitStop — 启动中...
-  ✅ backend   已启动 (PID: 12345) — http://localhost:8080
-  ✅ frontend  已启动 (PID: 12346) — http://localhost:5173
-  📋 日志输出到 ./logs/
-  ⏹  按 Ctrl+C 停止所有服务
-```
-
-现在去改代码吧。保存后 SpringBoot 会自动重启，Vue 页面会即时更新。
-
-### 4. 停止
+启动前自动运行环境检查，全部通过后启动服务。跳过检查：
 
 ```bash
-pitstop stop
+pitstop start --skip-check
 ```
 
-### 5. 查看报告
+### 5. 导出脚本
 
 ```bash
-pitstop report
+pitstop export -o scripts
 ```
 
-输出：
+生成 4 个文件：
 
 ```
-📊 日志摘要 — my-app
-  backend:   ERROR: 2  WARN: 5  INFO: 128
-  frontend:  ERROR: 0  WARN: 1  INFO: 45
-  ⚠️  发现 2 个错误，详见 ./logs/backend.log
+scripts/
+├── start.sh     # Linux/macOS 启动
+├── stop.sh      # Linux/macOS 停止
+├── start.bat    # Windows 启动
+└── stop.bat     # Windows 停止
 ```
 
-## 配置参考
+生成的脚本可以直接运行，也可以提交到 git，跟项目走。
+
+### 6. 停止 & 报告
+
+```bash
+pitstop stop     # 优雅停止所有服务
+pitstop report   # 查看日志摘要（ERROR/WARN/INFO 统计）
+```
+
+## 配置说明
+
+### 项目配置 `pitstop.yaml`（提交到 git）
+
+| 字段 | 说明 |
+|------|------|
+| `project.name` | 项目名称 |
+| `services.<name>.cwd` | 工作目录（相对于配置文件） |
+| `services.<name>.command` | 启动命令 |
+| `services.<name>.port` | 端口号（可选） |
+| `services.<name>.health_check` | 健康检查 URL（可选） |
+| `requirements.<tool>` | 版本约束，如 `">=17"`、`">=3.8.0"` |
+| `logging.dir` | 日志目录 |
+| `logging.stdout` | 是否同时输出到终端 |
+
+### 本机配置 `~/.pitstop/config.yaml`（不提交）
 
 ```yaml
-project:
-  name: "项目名称"          # 显示在日志和报告中
-
-services:
-  <服务名>:
-    type: springboot | vue  # 服务类型
-    path: "./path"          # 项目目录（相对于配置文件）
-    command: "启动命令"      # 如 mvn spring-boot:run / pnpm dev
-    port: 8080              # 服务端口
-    health_check: "URL"     # 健康检查地址（可选）
-
-logging:
-  dir: "./logs"             # 日志目录
-  stdout: true              # 是否同时输出到终端
+paths:
+  java: /usr/lib/jvm/java-17/bin/java
+  node: /usr/local/bin/node
+  maven: /usr/local/bin/mvn
+ports:
+  range: [10000, 60000]
 ```
 
-## 架构
-
-```
-pitstop start
-│
-├── 解析 pitstop.yaml
-│
-├── 启动 SpringBoot
-│   └── DevTools 监听 classpath → 自动重启
-│
-├── 启动 Vue
-│   └── Vite HMR 即时更新
-│
-├── 收集 stdout 日志 → ./logs/
-│
-├── 健康检查（HTTP 轮询）
-│
-└── Ctrl+C → 优雅停止所有进程
-```
+不存在时自动从 PATH 检测。可选配置，覆盖检测结果。
 
 ## 命令一览
 
 | 命令 | 说明 |
 |------|------|
-| `pitstop start` | 启动所有服务（读取当前目录 `pitstop.yaml`） |
-| `pitstop start -c path` | 指定配置文件路径 |
-| `pitstop stop` | 停止所有服务 |
-| `pitstop report` | 查看日志摘要 |
+| `pitstop check` | 检查环境是否满足 requirements |
+| `pitstop start` | 启动所有服务（自动检查环境） |
+| `pitstop start --skip-check` | 跳过环境检查直接启动 |
+| `pitstop start -c path` | 指定配置文件 |
+| `pitstop stop` | 优雅停止所有服务 |
+| `pitstop report` | 日志摘要报告 |
+| `pitstop export` | 导出启动/停止脚本 |
+| `pitstop export -o dir` | 指定脚本输出目录 |
+
+## 架构
+
+```
+pitstop.yaml (项目配置)          ~/.pitstop/config.yaml (本机配置)
+       │                                    │
+       ▼                                    ▼
+  ┌─────────────────────────────────────────┐
+  │              PitStop CLI                │
+  ├─────────────┬───────────┬───────────────┤
+  │  envcheck   │  process  │  scriptgen    │
+  │  版本检查    │  进程管理  │  脚本生成     │
+  └─────────────┴───────────┴───────────────┘
+       │              │              │
+       ▼              ▼              ▼
+   pitstop check  pitstop start  pitstop export
+```
 
 ## 适用场景
 
 - ✅ SpringBoot + Vue 前后端分离项目
 - ✅ AI 辅助开发后的快速验证
-- ✅ 本地开发环境内存紧张（不想开 IDE）
-- ✅ 需要频繁重启验证的迭代开发
-
-## 不适用场景
-
-- ❌ CI/CD 流水线（太慢，用 GitHub Actions）
-- ❌ 自动化 E2E 测试（PitStop 做人工验证）
-- ❌ 多人协作部署（单人工具）
-- ❌ 生产环境部署
+- ✅ 新环境搭建时快速检查依赖
+- ✅ 生成可移植的启动脚本
 
 ## Roadmap
 
 - [x] V1.0 — 一键启动 + 热重载 + 日志收集
-- [ ] V1.1 — 服务器依赖管理（Redis/MQ/MySQL 远程配置）
-- [ ] V1.2 — 结构化测试报告（Markdown/HTML）
-- [ ] V2.0 — Django 支持
-- [ ] V2.1 — 增量热替换（替代全量重启）
+- [x] V2.0 — 环境检查 + 本机配置 + 脚本导出
+- [ ] V2.1 — 服务器依赖管理（Redis/MQ/MySQL 远程配置）
+- [ ] V2.2 — 结构化测试报告（Markdown/HTML）
+- [ ] V3.0 — Django 支持
 
 ## License
 
 [MIT](LICENSE)
-
----
-
-<div align="center">
-
-**PitStop** — 让 AI 代码验证快起来。
-
-</div>

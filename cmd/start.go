@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"pitstop/internal/config"
+	"pitstop/internal/envcheck"
+	"pitstop/internal/localconfig"
 	"pitstop/internal/logger"
 	"pitstop/internal/process"
 
@@ -17,11 +19,12 @@ import (
 )
 
 var cfgFile string
+var skipCheck bool
 
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "启动所有服务",
-	Long:  "读取 pitstop.yaml 配置，启动 SpringBoot + Vue 服务，支持热重载。",
+	Long:  "读取 pitstop.yaml 配置，检查环境，启动 SpringBoot + Vue 服务，支持热重载。",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runStart()
 	},
@@ -29,6 +32,7 @@ var startCmd = &cobra.Command{
 
 func init() {
 	startCmd.Flags().StringVarP(&cfgFile, "config", "c", "pitstop.yaml", "配置文件路径")
+	startCmd.Flags().BoolVar(&skipCheck, "skip-check", false, "跳过环境检查")
 	rootCmd.AddCommand(startCmd)
 }
 
@@ -36,6 +40,22 @@ func runStart() error {
 	cfg, err := config.Load(cfgFile)
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
+	}
+
+	// Preflight: environment check.
+	if !skipCheck && len(cfg.Requirements) > 0 {
+		localCfg, err := localconfig.Load("")
+		if err != nil {
+			return fmt.Errorf("loading local config: %w", err)
+		}
+		checker := envcheck.New(cfg.Requirements, localCfg)
+		results := checker.Check()
+		if !envcheck.CheckAllPassed(results) {
+			fmt.Println(envcheck.FormatResults(results))
+			fmt.Println("\nUse --skip-check to start anyway.")
+			return fmt.Errorf("environment check failed")
+		}
+		fmt.Println("✅ Environment check passed.")
 	}
 
 	fmt.Printf("PitStop — %s\n", cfg.Project.Name)
