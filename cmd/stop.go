@@ -22,6 +22,7 @@ var stopCmd = &cobra.Command{
 }
 
 func init() {
+	stopCmd.Flags().StringVarP(&cfgFile, "config", "c", "pitstop.yaml", "配置文件路径")
 	rootCmd.AddCommand(stopCmd)
 }
 

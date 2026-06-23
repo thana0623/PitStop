@@ -52,7 +52,9 @@ func (m *Manager) Start(name, workDir, command string, out io.Writer) error {
 
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/C", command)
+		// Fix Unix-style mvnw invocation for Windows.
+		winCmd := fixWindowsCommand(command)
+		cmd = exec.Command("cmd", "/C", winCmd)
 	} else {
 		cmd = exec.Command("sh", "-c", command)
 	}
@@ -276,6 +278,16 @@ func (m *Manager) writePID(name string, pid int) error {
 func (m *Manager) removePID(name string) {
 	path := filepath.Join(m.pidDir, name+".pid")
 	os.Remove(path) // ignore error
+}
+
+// fixWindowsCommand patches Unix-style commands for Windows compatibility.
+// For example, "./mvnw" becomes "mvnw.cmd" when a .cmd wrapper exists.
+func fixWindowsCommand(command string) string {
+	// Replace "./mvnw" with "mvnw.cmd" at the start of the command.
+	if strings.HasPrefix(command, "./mvnw") {
+		return "mvnw.cmd" + command[len("./mvnw"):]
+	}
+	return command
 }
 
 // IsRunning checks if a service is currently tracked as running.

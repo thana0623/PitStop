@@ -21,6 +21,7 @@ var checkCmd = &cobra.Command{
 }
 
 func init() {
+	checkCmd.Flags().StringVarP(&cfgFile, "config", "c", "pitstop.yaml", "配置文件路径")
 	rootCmd.AddCommand(checkCmd)
 }
 

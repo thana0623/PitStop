@@ -19,6 +19,7 @@ var reportCmd = &cobra.Command{
 }
 
 func init() {
+	reportCmd.Flags().StringVarP(&cfgFile, "config", "c", "pitstop.yaml", "配置文件路径")
 	rootCmd.AddCommand(reportCmd)
 }
 
