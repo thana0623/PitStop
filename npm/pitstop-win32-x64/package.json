@@ -1,0 +1,16 @@
+{
+  "name": "@pitstop/win32-x64",
+  "version": "1.0.0",
+  "description": "PitStop native binary for Windows x64",
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "bin": {
+    "pitstop": "pitstop.exe"
+  },
+  "files": ["pitstop.exe"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thana0623/PitStop.git"
+  }
+}

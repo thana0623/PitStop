@@ -1,0 +1,16 @@
+{
+  "name": "@pitstop/darwin-x64",
+  "version": "1.0.0",
+  "description": "PitStop native binary for macOS x64",
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "bin": {
+    "pitstop": "pitstop"
+  },
+  "files": ["pitstop"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thana0623/PitStop.git"
+  }
+}
